@@ -7,6 +7,7 @@ module openconfig-optical-amplifier-annot {
 
     import sonic-extensions { prefix sonic-ext; }
     import openconfig-optical-amplifier { prefix oc-opt-amp; }
+    import com-oplink-amplifier-ext { prefix com-oplink-amplifier-ext; }
 
     deviation /oc-opt-amp:optical-amplifier {
       deviate add {
@@ -104,6 +105,18 @@ module openconfig-optical-amplifier-annot {
     deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:amplifiers/oc-opt-amp:amplifier/oc-opt-amp:config/oc-opt-amp:fiber-type-profile {
       deviate add {
         sonic-ext:field-name "fiber-type-profile";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:amplifiers/oc-opt-amp:amplifier/oc-opt-amp:config/com-oplink-amplifier-ext:autolos {
+      deviate add {
+        sonic-ext:field-name "autolos";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:amplifiers/oc-opt-amp:amplifier/oc-opt-amp:config/com-oplink-amplifier-ext:apr-enabled {
+      deviate add {
+        sonic-ext:field-name "apr-enabled";
       }
     }
 
@@ -316,6 +329,18 @@ module openconfig-optical-amplifier-annot {
       }
     }
 
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:amplifiers/oc-opt-amp:amplifier/oc-opt-amp:state/com-oplink-amplifier-ext:autolos {
+      deviate add {
+        sonic-ext:field-name "autolos";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:amplifiers/oc-opt-amp:amplifier/oc-opt-amp:state/com-oplink-amplifier-ext:apr-enabled {
+      deviate add {
+        sonic-ext:field-name "apr-enabled";
+      }
+    }
+
     deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels {
       deviate add {
         sonic-ext:table-name "OTN_OSC";
@@ -341,6 +366,12 @@ module openconfig-optical-amplifier-annot {
     deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels/oc-opt-amp:supervisory-channel/oc-opt-amp:config/oc-opt-amp:interface {
       deviate add {
         sonic-ext:field-transformer "osc_interface_xfmr";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels/oc-opt-amp:supervisory-channel/oc-opt-amp:config/com-oplink-amplifier-ext:enabled {
+      deviate add {
+        sonic-ext:field-name "enabled";
       }
     }
 
@@ -396,4 +427,23 @@ module openconfig-optical-amplifier-annot {
       }
     }
 
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels/oc-opt-amp:supervisory-channel/oc-opt-amp:state/com-oplink-amplifier-ext:enabled {
+      deviate add {
+        sonic-ext:field-name "enabled";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels/oc-opt-amp:supervisory-channel/oc-opt-amp:state/com-oplink-amplifier-ext:drop-power {
+      deviate add {
+        sonic-ext:field-name "drop-power";
+      }
+    }
+
+    deviation /oc-opt-amp:optical-amplifier/oc-opt-amp:supervisory-channels/oc-opt-amp:supervisory-channel/oc-opt-amp:state/com-oplink-amplifier-ext:add-power {
+      deviate add {
+        sonic-ext:field-name "add-power";
+      }
+    }
+
 }
+
