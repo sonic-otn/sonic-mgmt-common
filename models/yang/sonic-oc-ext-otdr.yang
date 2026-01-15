@@ -1,9 +1,9 @@
-module openconfig-optical-time-domain-reflectometer {
+module sonic-oc-ext-otdr {
 
   yang-version "1";
 
   // namespace
-  namespace "http://openconfig.net/yang/otdr";
+  namespace "http://sonic-oc-ext/yang/otdr";
 
   prefix "oc-otdr";
 
@@ -13,56 +13,48 @@ module openconfig-optical-time-domain-reflectometer {
   import openconfig-extensions { prefix oc-ext; }
   import openconfig-yang-types { prefix oc-yang; }
   import openconfig-transport-types { prefix oc-opt-types; }
-
+  import openconfig-optical-amplifier { prefix oc-amp; }
 
   // meta
-  organization "OpenConfig working group";
+  organization "sonic-otn-wg";
 
   contact
-    "OpenConfig working group
-      www.openconfig.net";
+    "SONiC OTN working group
+      github.com/sonic-otn";
 
   description
-    "This model describes configuration and operational state data
-    for an OTDR.";
+    "This openconfig style model describes configuration and operational state data
+    for an OTDR.
+    Reference: OCP gnoi-otdr proto specification and initial version from Alibaba Inc.";
 
-  oc-ext:openconfig-version 0.1.3;
+  oc-ext:openconfig-version 0.1.0;
 
-  revision 2020-04-01 {
+  revision 2026-01-10 {
     description
-      "add otdr locator when sending rpc, modify ieee float-32 format to decimal64";
-    reference "0.6.0";
-  }
-
-  revision "2019-04-28" {
-    description
-      "Update otdr result categories, e.g. baseline, current and history, add scanning-profile to results";
-    reference "0.5.0";
-  }
-
-  revision "2019-04-11" {
-    description
-      "Add otdr repetition, dynamic-range, dead-zone, etc.,
-      modify rpc response structure";
-    reference "0.4.0";
-  }
-
-  revision "2019-04-01" {
-    description
-      "Revised version from Alibaba";
-    reference "0.3.0";
-  }
-
-  revision "2019-03-29" {
-    description
-      "Initial version from Alibaba";
-    reference "0.2.0";
-  }
-
-  revision "2018-08-28" {
-    description
-      "Initial revision";
+      "Initial release with basic configuration, state and results for OTDR scan,
+      including fiber profile, scanning profile, scheduler, OTDR module specification.";
     reference "0.1.0";
+  }
+
+  // feature statements
+
+  // identity statements
+
+  identity OTDR_SCAN_TRIGGER_TYPE {
+    description
+      "Type defining different OTDR scan trigger types.";
+  }
+
+  identity APSD {
+    base OTDR_SCAN_TRIGGER_TYPE;
+    description
+      "Automatic trigger OTDR scan when APSD is raised or cleared.";
+  }
+
+  identity RELECTION-HIGH {
+    base OTDR_SCAN_TRIGGER_TYPE;
+    description
+      "Automatic trigger OTDR scan when reflection high is eaised or cleared.";
   }
 
   // typedef statements
@@ -71,27 +63,24 @@ module openconfig-optical-time-domain-reflectometer {
     type enumeration {
       enum START {
         description
-          "Start-Event on a OTDR trace is the initial point";
+          "First event on a OTDR trace from initial point, 
+          regardless if the loss or reflection exceed the thresholds or not.";
       }
       enum END {
         description
-          "End-Event on a OTDR trace is the end point of a fiber";
+          "Last event on a OTDR trace is the end point of a fiber.";
       }
       enum REFLECTION {
         description
-          "The phenonmenon on a trace that some power of an optical
-          pulse is reflected called a reflection event. It is displayed
-          as a peak signal on a trace";
+          "The optical pulse is reflected. It is displayed as a trace peak.";
       }
       enum NON-REFLECTION {
         description
-          "The phenonmenon on a trace that there exists some abnormal
-          loss in an optical line, but no reflection occurred is called
-          a Non-Reflection-Event. It is displayed as a drop with no peak";
+          "Loss is detected with reflection suddenly decreasedt is displayed as a drop with no peak.";
       }
       enum FIBER-SECTION {
         description
-        "A fiber section as an event";
+        "Detected degradation based on loss slope including macro bend, micro bend and suspicious bend.";
       }
       enum UNKOWN {
         description
@@ -109,20 +98,18 @@ module openconfig-optical-time-domain-reflectometer {
 
       leaf refractive-index {
         type decimal64 {
-          fraction-digits 4;
+          fraction-digits 6;
         }
-
         description
-          "refractive ratio";
+          "Refractive ratio.";
       }
 
       leaf backscatter-index {
         type decimal64 {
           fraction-digits 2;
         }
-
         description
-          "backscatter ratio";
+          "Backscatter ratio.";
       }
 
       leaf reflection-threshold {
@@ -130,16 +117,15 @@ module openconfig-optical-time-domain-reflectometer {
           fraction-digits 2;
         }
         description
-	  "reflection threshold";
+	        "Reflection threshold.";
       }
 
       leaf splice-loss-threshold {
         type decimal64 {
           fraction-digits 2;
         }
-
         description
-          "splice loss threshold";
+          "Splice loss threshold.";
       }
 
       leaf end-of-fiber-threshold {
@@ -147,14 +133,14 @@ module openconfig-optical-time-domain-reflectometer {
           fraction-digits 2;
         }
         description
-          "fiber end event threshold";
+          "Fiber end event threshold.";
       }
     }
   }
 
   grouping otdr-scanning-profile {
     description
-      "Enclosing container for otdr scanning profile configuration";
+      "Enclosing container for otdr scanning profile configuration.";
 
     container scanning-profile {
 
@@ -162,42 +148,76 @@ module openconfig-optical-time-domain-reflectometer {
         type uint32;
         units km;
         description
-          "distance range in km";
+          "The maximum fiber distance range that the OTDR trace will support.";
       }
 
       leaf pulse-width {
         type uint32;
         units ns;
         description
-          "pulse width in ns";
+          "The pulse width sent by the OTDR during the test.";
       }
 
-      leaf average-time {
+      leaf acquisition-time {
         type uint32;
         units s;
         description
-          "Average time of each scanning";
+          "The time in seconds in which the OTDR trace will run continuously to collect data.";
       }
 
-      leaf output-frequency {
+      leaf sampling-resolution-m {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "m";
+        description
+          "Sampling resolution in meters.";
+      }
+
+      leaf fiber-type {
+        type identityref {
+          base oc-amp:FIBER_TYPE_PROFILE;
+        }
+        default oc-amp:SSMF;
+        description
+          "The type of fiber that is being measured.";
+      }
+
+      leaf wavelength {
         type oc-opt-types:frequency-type;
         description
-          "The output frequency in MHz of the OTDR";
+          "The wavelength in MHz that will be sent by the OTDR. 
+          This may be left blank if the OTDR only supports one wavelength.";
+      }
+
+      leaf disable_auto_negotiation {
+        type boolean;
+        default false;
+        description
+          "Disable auto negotiation expects the following behavior:
+          - When set to True, the device will not attempt any negotiation with
+            the far end device to prevent OTDR usage on the same fiber.
+          - When set to False and the far end is reachable, communication will
+            occur with both devices to prevent OTDR usage on the same fiber.
+          - When set to False and the far end is NOT reachable (i.e. fiber cut),
+            the device will not attempt any negotiation with the far end device to
+            prevent OTDR usage on the same fiber.
+          - By default, value is False.";
       }
     }
   }
 
-  grouping otdr-repetition {
+  grouping otdr-auto-scan-trigger {
     description
-      "Enclosing container for otdr repetition configuration";
+      "Enclosing container for otdr auto trigger configuration";
 
-    container repetition {
+    container scan-scheduler {
 
       leaf enable {
         type boolean;
         description
-          "Repetition or not. If True, then
-          periodic scan the fiber with given frequency";
+          "Enable or disable the scan scheduler. If True, then
+          periodic scan the fiber with given scan configureation.";
         default false;
       }
 
@@ -214,8 +234,21 @@ module openconfig-optical-time-domain-reflectometer {
           "The scan period of the repetition, e.g. 60s, 15*60s, 24*60*60s";
       }
     }
-  }
 
+    list event-trigger {
+      key "trigger-type";
+      description
+        "List of auto scan trigger types enabled";
+
+      leaf trigger-type {
+        type identityref {
+          base OTDR_SCAN_TRIGGER_TYPE;
+        }
+        description
+          "Type of auto scan trigger";
+      }
+    }
+  }
 
   grouping otdr-config {
     description
@@ -241,12 +274,12 @@ module openconfig-optical-time-domain-reflectometer {
 
     uses otdr-fiber-profile;
     uses otdr-scanning-profile;
-    uses otdr-repetition;
+    uses otdr-auto-scan-trigger;
   }
 
   grouping otdr-specification {
     description
-      "Enclosing container for otdr repetition configuration";
+      "Enclosing container for otdr scan capabilities specification";
 
     container specification {
 
@@ -261,7 +294,6 @@ module openconfig-optical-time-domain-reflectometer {
         type decimal64 {
           fraction-digits 2;
         }
-
         units m;
         description
         "The distance accuracy of each event";
@@ -280,7 +312,6 @@ module openconfig-optical-time-domain-reflectometer {
         type decimal64 {
           fraction-digits 2;
         }
-
         units m;
         description
         "The dead zone of loss event";
@@ -290,7 +321,6 @@ module openconfig-optical-time-domain-reflectometer {
         type decimal64 {
           fraction-digits 2;
         }
-
         units m;
         description
         "The dead zone of reflection event";
@@ -328,101 +358,113 @@ module openconfig-optical-time-domain-reflectometer {
           "Time of each scanning operation, including date and time";
       }
 
-      leaf span-distance {
+      leaf total-length {
         type decimal64 {
           fraction-digits 2;
         }
-
         units km;
         description
-        "Total length of a fiber span";
+          "Total measured length of a fiber span";
       }
 
-      leaf span-loss {
+      leaf total-loss {
         type decimal64 {
           fraction-digits 2;
         }
-
         units dB;
         description
-        "Total loss of a fiber span";
+          "Total measured loss of a fiber span.";
+      }
+
+      leaf optical-return-loss {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units dB;
+        description
+          "Optical return loss of a fiber span.";
+      }
+
+      leaf average-loss-km {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units dB;
+        description
+          "Average loss per km of a fiber span.";
+      }
+
+      leaf discovered-fiber-type {
+        type identityref {
+          base oc-amp:FIBER_TYPE_PROFILE;
+        }
+        description
+          "The type of fiber that is being measured as discovered by the OTDR.";  
+      }
+
+      leaf event-count {
+        type uint32;
+        description
+          "Count of the event.";
       }
 
       list event {
-        key index;
-        description
-          "List of otdr results";
-
-        leaf index {
-          type uint16;
-          description
-            "Index of event";
-        }
 
         leaf type {
           type otdr-event-type;
           description
-          "Event type";
+            "Event type";
         }
 
-        leaf length {
+        leaf distance {
           type decimal64 {
             fraction-digits 2;
           }
-
           units km;
           description
-          "Event distance or fiber section length in km";
+            "Event distance at which the event occured.";
         }
 
         leaf loss {
           type decimal64 {
             fraction-digits 2;
           }
-
+          units dB;
           description
-          "Event loss in dB";
+            "The fiber loss that occurred at the event point.";
         }
 
         leaf reflection {
           type decimal64 {
             fraction-digits 2;
           }
-
+          units dB;
           description
-          "Event reflection in dB";
+            "The reflection that occurred at the event point.";
         }
 
         leaf accumulate-loss {
           type decimal64 {
             fraction-digits 2;
           }
-
+          units dB;
           description
-          "Accumulated loss at the event point";
+            "Accumulated loss at the event point including fiber loss and previous events.";
         }
       }
-    }
-  }
 
-  grouping otdr-result-trace {
-    description
-      "Top-level grouping for OTDR result waveform";
-
-    container trace {
-
-      leaf update-time {
-        type oc-yang:date-and-time;
+      leaf sor-file {
+        type string;
         description
-          "Update time of the trace, including date and time";
+          "file path and name of the sor file. can be uploaded and used for offline analysis.";
       }
 
-      leaf data {
-        type oc-yang:hex-string;
+      leaf baseline {
+        type boolean;
+        default false;
+        description 
+          "if this trace is the baseline.";
       }
-
-      description
-      "Need to consider if there is a better way to collect the waveform";
     }
   }
 
@@ -432,17 +474,18 @@ module openconfig-optical-time-domain-reflectometer {
 
     uses otdr-scanning-profile;
     uses otdr-events;
-    uses otdr-result-trace;
   }
 
   grouping otdr-results-top {
     description
-      "Top-level grouping for OTDR result";
+      "List of OTDR results";
 
     list result {
-      key scan-time;
+      max-elements 50;
       description
         "List of otdr results";
+
+      key scan-time;
 
       leaf scan-time {
         type leafref {
@@ -495,33 +538,12 @@ module openconfig-optical-time-domain-reflectometer {
           uses otdr-state;
         }
 
-        container baseline-result {
+        container scan-results {
 
           config false;
 
           description
-            "Enclosing container for otdr baseline results";
-
-          uses otdr-result-top;
-        }
-
-        container current-result {
-
-          config false;
-
-
-          description
-            "Enclosing container for otdr current results";
-
-          uses otdr-result-top;
-        }
-
-        container history-results {
-
-          config false;
-
-          description
-            "Enclosing container for otdr history results";
+            "Enclosing container for otdr scan results";
 
           uses otdr-results-top;
         }
@@ -537,11 +559,11 @@ module openconfig-optical-time-domain-reflectometer {
   // rpc statements
 
 
-  rpc trigger-a-shot {
+  rpc initiate-scan {
     description
-      "The RPC instantly trigger the otdr and send back the results, if the
-       scanning-status of the otdr is active, the result is empty with informative
-       message";
+      "The RPC instantly trigger the otdr and send back the results. 
+      It is an async request as the otdr scan may take a while to finish.
+      user can query the odtr state for scan status (ACTIVE/INACTIVE).";
 
     input {
       leaf name {
@@ -558,42 +580,6 @@ module openconfig-optical-time-domain-reflectometer {
       }
 
       uses otdr-result-top;
-    }
-  }
-
-  rpc load-results {
-    description
-      "The RPC select a section of time and ask to send back the all the results
-       within the time section";
-
-    input  {
-      leaf name {
-        type leafref {
-          path "/oc-otdr:otdrs/otdr/config/oc-otdr:name";
-        }
-      }
-
-      leaf start-time {
-        type oc-yang:date-and-time;
-        description
-          "Start time for a period, including date and time";
-      }
-
-      leaf end-time {
-        type oc-yang:date-and-time;
-        description
-          "End time for a period, including date and time";
-      }
-    }
-
-    output  {
-      leaf message {
-        type string;
-        description
-          "Informational response for the otdr results";
-      }
-
-      uses otdr-results-top;
     }
   }
 
@@ -621,8 +607,6 @@ module openconfig-optical-time-domain-reflectometer {
         description
           "Informational response for the otdr results";
       }
-
-      uses otdr-result-top;
     }
   }
 
